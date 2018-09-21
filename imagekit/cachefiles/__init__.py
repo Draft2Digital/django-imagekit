@@ -57,6 +57,19 @@ class ImageCacheFile(BaseIKFile, ImageFile):
 
         super(ImageCacheFile, self).__init__(storage=storage)
 
+    def read(self, *args, **kwargs):
+        """
+        If reading the file fails, regenerate it and try again.
+        """
+        try:
+            return super(ImageCacheFile, self).read(*args, **kwargs)
+        except IOError:
+            self.generate(force=True)
+            self.open()
+            content = super(ImageCacheFile, self).read(*args, **kwargs)
+            self.close()
+            return content
+
     def _require_file(self):
         if getattr(self, '_file', None) is None:
             content_required.send(sender=self, file=self)
